@@ -1,0 +1,6 @@
+recsys.utils.vec\_utils.cvt\_to\_word\_ids
+==========================================
+
+.. currentmodule:: recsys.utils.vec_utils
+
+.. autofunction:: cvt_to_word_ids

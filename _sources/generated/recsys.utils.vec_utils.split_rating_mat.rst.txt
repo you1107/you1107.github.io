@@ -1,0 +1,6 @@
+recsys.utils.vec\_utils.split\_rating\_mat
+==========================================
+
+.. currentmodule:: recsys.utils.vec_utils
+
+.. autofunction:: split_rating_mat

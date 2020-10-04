@@ -1,0 +1,32 @@
+===================================
+API References
+===================================
+
+``recsys.ctr``
+===================================
+
+.. currentmodule:: recsys.ctr
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+   :template: class.rst
+
+   ObiCTR
+
+``recsys.utils``
+===================================
+.. currentmodule:: recsys.utils
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   ~cy_utils.cy_calc_multinomial_pvals
+   ~cy_utils.cy_calc_new_user_mean
+   ~cy_utils.cy_calc_new_user_cov
+   ~cy_utils.cy_calc_new_item_mean
+   ~cy_utils.cy_calc_new_item_cov
+   ~cy_utils.cy_update_topic_word_mat
+   ~vec_utils.cvt_to_word_ids
+   ~vec_utils.split_rating_mat
