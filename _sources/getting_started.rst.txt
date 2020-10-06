@@ -1,0 +1,378 @@
+===================================
+Getting Started
+===================================
+
+.. contents:: Table of Contents
+   :depth: 2
+   :local:
+
+In this project, we implement the Online Bayesian Inference algorithm for Collaborative Topic Regression model (obi-CTR)
+[2]_. The original CTR model [1]_ combines vanilla LDA [4]_ and PMF [6]_ for recommender systems. Although the CTR model
+has achieved good results in many fields, it is not suitable for online learning. Hence, Liu, Chenghao, et al proposed
+two models, the Online Decoupled Inference algorithm for CTR model (odi-CTR) and the obi-CTR model [2]_ for improving
+this issue. The former speeds up the fitting process by leveraging online LDA [5]_, which uses stochastic variational
+inference [8]_ technique. Despite speeding up, it performs relatively poorly on both rating prediction and topic
+modeling task, and it still needs to define the data size in advance, which is not a fully online learning fashion.
+On the other hand, the latter jointly optimizes the combined objective function of both LDA and PMF part.
+Moreover, by leveraging streaming variational Bayes [9]_, the obi-CTR model is fully online learning fashion.
+In addition, it uses hybrid strategy [7]_ to speed up. Among these three algorithms, the obi-CTR model consistently
+outperforms the others in most cases [2]_.
+
+
+User Guide
+=========================================
+
+In this section, we'll guide you through the whole process of using the obi-CTR model, including initializing a
+:class:`~recsys.ctr.ObiCTR` object, fitting the model to the data and evaluating the performance of rating prediction
+and topic modeling task.
+
+Initialization
+-----------------------------------
+
+The first thing to do is import the package and then initialize a :class:`~recsys.ctr.ObiCTR` object::
+
+   from recsys.ctr import ObiCTR
+   obj = ObiCTR(seed=1025)
+
+Fitting the obi-CTR model
+-----------------------------------
+
+For the purpose of fitting a obi-CTR model to data, we load two sparse matrices, word count matrix, shape =
+*(# items, vocabulary size)* and rating matrix, shape = *(# users, # items)*::
+
+   import scipy.sparse as sparse
+   word_cnt_mat = sparse.load(f"./data/word_count_mat.npz")
+   rating_mat = sparse.load(f"./data/rating_matrix.npz")
+
+Then we feed the two sparse matrices to the model by invoking :meth:`~recsys.ctr.ObiCTR.fit`::
+
+   obj.fit(word_cnt_mat=word_cnt_mat, rating_mat=rating_mat)
+
+It is worth noting that the model save all the fitted parameters automatically during the fitting process every
+`evaluate_every` times. Also, the model split ratings into two dataset, training data and validation data
+automatically, to evaluate the performance on validation data.
+
+Evaluating RMSE and log likelihood
+-----------------------------------
+
+Once finished the fitted process, we can evaluate the performance of rating prediction task::
+
+   from recsys.utils.vec_utils import split_rating_mat
+   train_rating_mat, test_rating_mat = split_rating_mat(rating_mat=rating_mat, train_size=9000000, seed=1025)
+   obj.eval_rmse(rating_mat=test_rating_mat)
+
+We can evaluate the performance of topic modeling as well::
+
+   obj.eval_avg_ll(rating_mat=test_rating_mat)
+
+See :meth:`~recsys.ctr.ObiCTR.eval_rmse` and :meth:`~recsys.ctr.ObiCTR.eval_avg_ll` for more details.
+
+Prediction
+-----------------------------------
+
+In obi-CTR model, rating prediction is defined as
+
+.. math::
+   \hat{r}_{ij} \triangleq \mathbb{E}[\mathbf{u}_i^{\top}\mathbf{v}_j].
+
+It's simply just the inner product of :math:`\mathbf{m}_{ui}` and :math:`\mathbf{m}_{vj}`. For example, we can get
+the prediction of rating of item ``5`` given by user ``3``  by just calling :meth:`~recsys.ctr.ObiCTR.predict_rating`::
+
+   obj.predict_rating(user_id=3, item_id=5)
+
+Updating parameters streamingly
+-----------------------------------
+
+Once finished the fitted process, we can fit the model to another mini-batch rating dataset::
+
+   obj.partial_fit(rating_mat=another_rating_mat)
+
+See :meth:`~recsys.ctr.ObiCTR.partial_fit` for more details.
+
+Setting all the latent variables manually
+-----------------------------------------
+
+It's worth mentioning that we could also set all the fitted parameters manually by just feeding the correct data into
+:meth:`~recsys.ctr.ObiCTR.set_vars`::
+
+   # preparing all the fitted parameters...
+   # initialize a new object and set all the fitted parameters manually
+   another_obj = ObiCTR()
+   another_obj.set_vars(user_means=user_means, user_covs=user_covs,
+                        item_means=item_means, item_covs=item_covs,
+                        word_id_dict=word_id_dict,
+                        topic_assignment_dict=topic_assignment_dict,
+                        topic_word_mat=topic_word_mat)
+
+After setting all the latent variables, ``another_obj`` is just like the fitted model and we could use it like we have
+mentioned before.
+
+The obi-CTR Model in Depth
+=============================================
+
+In this section we introduce the obi-CTR model in detail. Specifically, we talk about the mathematical concepts behind
+the model and how to implement it. Below is the graphical visualization of this probabilistic model:
+
+.. figure:: _static/pgm.png
+   :scale: 60%
+
+There are :math:`K` topics, :math:`I` users and :math:`J` items, each item has :math:`N_j` words. As you could see, the
+obi-CTR model is a high-dimensional model and the goal of it is to inference all the latent variables by just using
+relatively few observed variables. In our case, only parts of rating records and text content of each item are observed,
+while the rest are not. See the following information for a deeper understanding about each variable of this model.
+
+.. topic:: Notations:
+
+   * :math:`\text{topic proportions:}~\boldsymbol{\theta}_j \sim \text{Dirichlet}(\alpha)`
+   * :math:`\text{topic:}~\boldsymbol{\phi}_k \sim \text{Dirichlet}(\beta)`
+   * :math:`\text{topic assignment:}~z_{jn} \sim \text{Multinomial}(1,~\boldsymbol{\theta}_j)`
+   * :math:`\text{word:}~w_{jn} \sim \text{Multinomial}(1,~\boldsymbol{\phi}_{z_{jn}})`
+   * :math:`\text{item latent offset:}~\boldsymbol{\epsilon}_j \sim \text{N}(\mathbf{0},~\frac{1}{\sigma_{\epsilon}^2}\mathbf{I}_K)`
+   * :math:`\text{item latent vector:}~\mathbf{v}_j = \boldsymbol{\epsilon}_j + \boldsymbol{\theta}_j \sim \text{N}(\boldsymbol{\theta}_j,~\frac{1}{\sigma_{\epsilon}^2}\mathbf{I}_K)`
+   * :math:`\text{user latent vector:}~\mathbf{u}_i \sim \text{N}(\mathbf{0},~\frac{1}{\sigma_{u}^2}\mathbf{I}_K)`
+   * :math:`\text{rating:}~r_{ij} \sim \text{N}(\mathbf{u}_i^{\top}\mathbf{v}_j,~ \frac{1}{\sigma_{r}^2}\mathbf{I}_K)`
+
+Generative process
+-------------------
+
+The generative process of the obi-CTR model is as follows:
+
+1. For each user :math:`i`, draw user latent vector :math:`\mathbf{u}_i`.
+2. For each topic :math:`k`, draw topic :math:`\boldsymbol{\phi}_k`.
+3. For each item :math:`j`:
+
+  a. Draw topic proportions :math:`\boldsymbol{\theta}_j`.
+  b. Draw item latent offset :math:`\boldsymbol{\epsilon}_j` and set item latent vector
+     :math:`\mathbf{v}_j = \boldsymbol{\epsilon}_j + \boldsymbol{\theta}_j`.
+  c. For each word position :math:`n` in item :math:`j`:
+
+    i. Draw topic assignment :math:`z_{jn}`.
+    ii. Draw word :math:`w_{jn}`.
+
+4. For each user-item pair :math:`(i,~j)`, draw rating :math:`r_{ij}`.
+
+Mathematical techniques and implementing the core algorithm
+-----------------------------------------------------------
+
+First, the obi-CTR model leverages streaming variational Bayes [9]_ to relax the assumption that the data size must be
+defined in advance. In particular, suppose the training data :math:`\mathbb{x}_1,\mathbb{x}_2,\dots` are generated
+i.i.d. according to a distribution :math:`p(\mathbb{x}|\Theta)` given parameters :math:`\Theta`, and we have seen and
+processed :math:`T-1` samples :math:`\{\mathbb{x}_t\}_{t=1}^{T-1}`. Then Bayes theorem gives us the posterior after
+observing :math:`T` samples
+
+.. math::
+
+   p(\Theta | \mathbb{x}_1, \dots,\mathbb{x}_T) \propto p(\mathbb{x}_T|\Theta)p(\Theta | \mathbb{x}_1, \dots, \mathbb{x}_{T-1})
+
+That is, we treat :math:`p(\Theta | \mathbb{x}_1, \dots, \mathbb{x}_{T-1})` as the new prior for the incoming data point
+:math:`\mathbb{x}_T`.
+
+Moreover, there are two ways to implement approximate inference of the Bayes networks, variational inference (VI)
+([4]_, [5]_, [8]_, [9]_) and Markov Chain Monte Carlo (MCMC) [3]_. The obi-CTR model uses hybrid strategy [7]_ to get
+the approximate sufficient statistics of variational parameters of each "topic" dirichlet distribution and each "item
+latent vector" normal distribution. Specifically, we run gibbs sampling :math:`S` rounds to draw new topic assignments.
+After :math:`B` burn-in sweeps, we use rest samples to update. In addition, it allows us not to represent topic
+proportions :math:`\boldsymbol{\theta}_j` and we can calculate :math:`k`-th element of the topic proportions
+
+.. math::
+
+   \boldsymbol{\theta}_j^{(k)}=\dfrac{\mathbf{C}_j^{(k)} + \alpha}{\sum_{k=1}^K \mathbf{C}_j^{(k)} + K \alpha}
+
+where :math:`\boldsymbol{\theta}_j^{(k)}` is :math:`k`-th element of topic proportions :math:`\boldsymbol{\theta}_j` and
+:math:`\mathbf{C}_j^{(k)}` is the number of words in item :math:`j` that are assigned to topic :math:`k` and
+:math:`\mathbf{C}_j=(\mathbf{C}_j^{(1)},~\dots,~\mathbf{C}_j^{(K)})^{\top}`.
+
+Furthermore, inspired by supervised topic model [10]_, :math:`\mathbf{v}_j` is set to
+:math:`\boldsymbol{\epsilon}_j + \bar{\mathbf{z}}_j` where :math:`\bar{\mathbf{z}}_j=\frac{\mathbf{C}_j}{N_j}` is
+empirical topic frequencies of item :math:`j`, instead of the original setting, for simplifying the mathematical inference.
+
+Finally, below is the summary of the implementation of the obi-CTR model:
+
+1. Randomly initialize
+
+  * :math:`\{(\mathbf{m}_{ui},~\Sigma_{ui})\}_{i=1}^{I}`, variational parameters of each user latent vector
+    :math:`\mathbf{u}_i`, and
+  * :math:`\{(\mathbf{m}_{vj},~\Sigma_{vj})\}_{j=1}^{J}`, variational parameters of each item latent vector
+    :math:`\mathbf{v}_{j}`, and
+  * :math:`\{\mathbf{z}_j\}_{j=1}^{J}`, topic
+    assignment of each word :math:`w_{jn}` in each item :math:`j` where :math:`\mathbf{z}_j = \{ z_{jn} \}_{n=1}^{N_j}`.
+
+2. Receive a new data sample:
+
+  * :math:`r_{ij}`, rating of item :math:`j` given by user :math:`i`, and
+  * :math:`\mathbf{w}_j`, text content of item :math:`j` where :math:`\mathbf{w}_j=\{w_{jn}\}_{n=1}^{N_j}`.
+
+3. For each gibbs sampling round :math:`s`:
+
+  a. For each word :math:`w_{jn}` in item :math:`j`:
+
+    i. Draw new topic assignment :math:`z_{jn}^s \sim q(z_{jn}^s | \cdots)` in round :math:`s`.
+    ii. If :math:`s>B`, then collect :math:`z_{jn}^s`.
+
+4. For each word :math:`w_{jn}` in item :math:`j`, use collected samples :math:`\{z_{jn}^s\}_{s=S-B}^S` to estimate
+   :math:`\gamma_{jn}^k`, the probability of assigning word :math:`w_{jn}` to each topic :math:`k`.
+
+5. Update :math:`\{\Delta_k\}_{k=1}^{K}`, variational parameters  of each topic :math:`\boldsymbol{\phi}_k`.
+
+6. Update
+
+  * :math:`(\mathbf{m}_{ui},~\Sigma_{ui})`, variational parameters of user latent vector :math:`\mathbf{u}_i`, and
+  * :math:`(\mathbf{m}_{vj},~\Sigma_{vj})`, variational parameters of item latent vector :math:`\mathbf{v}_j`.
+
+7. Repeat step (2), (3), (4), (5), (6).
+
+Mathematical Formulation
+==========================
+
+Draw topic assignments
+---------------------------
+
+New topic assignment can be drawn from the conditional distribution of one variable :math:`z_{jn}` given others:
+
+.. math::
+
+   \begin{aligned}
+   q&(z_{jn}=k | \mathbf{z}_{j \lnot n} ,~ \mathbf{v}_j ,~ \Phi ,~ w_{jn}) \\
+    &\propto \underbrace{(\alpha + \mathbf{C}_{j \lnot n}^{(k)})
+                        \exp \Bigg(\Lambda_k,w_{jn}}_
+                       {\text{LDA part}} +
+                       \underbrace{\dfrac{1}{2 \sigma_{\epsilon}^2 N_j}
+                       \Big(2 \mathbf{m}_{vj}^{k} -
+                            \dfrac{1 +2 \mathbf{C}_{j \lnot n}^{(k)}}{N_j}
+                       \Big)}_
+                       {\text{PMF part}}\Bigg)
+   \end{aligned}
+
+See [2]_ in detail.
+
+Update variational parameters of topics
+---------------------------------------
+
+Update variational parameters of topic :math:`\boldsymbol{\phi}_k`:
+
+.. math::
+   \Delta_{kw}^{\star} = \Delta_{kw}^{t} + \sum_{n=1}^{N_j}\gamma_{jn}^k \mathbb{I}[w_{jn}=w]
+
+where :math:`\gamma_{jn}^k` is the probability of assigning word :math:`w_{jn}` to topic :math:`k`, which is estimated
+from the samples drawn from previous gibbs sampling process.
+
+See [2]_ in detail.
+
+Update variational parameters of user latent vector
+-------------------------------------------------------------
+
+Update the mean vector of user latent vector :math:`\mathbf{u}_i`:
+
+.. math::
+   \mathbf{m}_{ui}^{*} = \mathbf{m}_{ui}^{t} +
+                         \dfrac{r_{ij} - \mathbf{m}_{vj}^{\top} \mathbf{m}_{ui}^{t}}
+                               {\sigma_r^2 + \mathbf{m}_{vj}^{\top} \Sigma_{ui}^{t} \mathbf{m}_{vj}}
+                         \Sigma_{ui}^{t}
+                         \mathbf{m}_{vj}
+
+Update the covariance matrix of user latent vector :math:`\mathbf{u}_i`:
+
+.. math::
+   \Sigma_{ui}^{*} = \Bigg( \big( \Sigma_{ui}^t \big)^{-1} +
+                            \dfrac{\mathbf{m}_{vj}\mathbf{m}_{vj}^{\top}}
+                                  {\sigma_{r}^2 \mathbf{I}_{K}}
+                     \Bigg)^{-1}
+
+See [2]_ in detail.
+
+Update variational parameters of item latent vector
+-------------------------------------------------------------
+
+Update the mean vector of item latent vector :math:`\mathbf{v}_j`:
+
+.. math::
+   \mathbf{m}_{vj}^{*} = \underbrace{\color{red}{\Sigma_{mix} \Sigma_{vj}^{-1} \mathbf{m}_{vj}^{t}}}_
+                                    {\color{red}{\text{red}}} +
+                         \underbrace{\color{green}{\Sigma_{mix} \dfrac{1}{\sigma_{\epsilon}^2} \bar{\mathbf{z}}_j}}_
+                                    {\color{green}{\text{green}}} -
+                         \underbrace{\color{blue}{\Sigma_{mix} \dfrac{1}{\sigma_{r}^2} \mathbf{m}_{ui}}}_
+                                    {\color{blue}{\text{blue}}}
+                         \Bigg( \dfrac{\mathbf{m}_{ui}^{\top} \color{red}{\text{red}} +
+                                       \mathbf{m}_{ui}^{\top} \color{green}{\text{green}} -
+                                       r_{ij}
+                                      }{ 1 + \mathbf{m}_{ui}^{\top} \color{blue}{\text{blue}}
+                                      }
+                         \Bigg)
+
+where :math:`\Sigma_{mix} = \big( \Sigma_{vj}^{-1} + \frac{1}{\sigma_{\epsilon}^2} \big)^{-1}`.
+
+Update the covariance matrix of item latent vector :math:`\mathbf{v}_j`:
+
+.. math::
+   \Sigma_{vj}^{*} = \Bigg( \big( \Sigma_{vj}^{t} \big)^{-1} +
+                            \dfrac{1}{\sigma_{\epsilon}^2 \mathbf{I}_{K}} +
+                            \dfrac{\mathbf{m}_{ui} \mathbf{m}_{ui}^{\top}}
+                                  {\sigma_{r}^2 \mathbf{I}_{K}}
+                     \Bigg)^{-1}
+
+See [2]_ in detail.
+
+Documentation Generation
+========================
+
+.. highlight:: none
+
+First install Sphinx, *a tool that makes it easy to create intelligent and beautiful documentation*::
+
+   pip install Sphinx==3.1.2
+
+We have already created a Sphinx project in the ``docs`` directory, all you need to do is go to the directory and
+run the script::
+
+   make html
+
+The rendered HTML documents are stored in the ``docs/_build/html`` directory.
+
+.. topic:: References:
+
+    .. [1] `"Collaborative Topic Modeling for Recommending Scientific Articles"
+           <http://www.cs.columbia.edu/~blei/papers/WangBlei2011.pdf>`_
+           Wang, C., & Blei, D. M., 2011
+
+    .. [2] `"Collaborative Topic Regression for Online Recommender Systems: an Online and Bayesian Approach."
+           <https://link.springer.com/article/10.1007/s10994-016-5599-z>`_
+           Liu, C., Jin, T., Hoi, S. C., Zhao, P., & Sun, J., 2017
+
+    .. [3] `"Finding Scientific Topics"
+           <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC387300/pdf/1015228.pdf>`_
+           Griffiths, T. L., & Steyvers, M, 2004
+
+    .. [4] `"Latent Dirichlet Allocation"
+           <http://www.jmlr.org/papers/volume3/blei03a/blei03a.pdf>`_
+           Blei, D. M., Ng, A. Y., & Jordan, M. I., 2003
+
+    .. [5] `"Online Learning for Latent Dirichlet Allocation”
+           <https://papers.nips.cc/paper/3902-online-learning-for-latent-dirichlet-allocation.pdf>`_
+           Hoffman, M., Bach, F. R., & Blei, D. M., 2010
+
+    .. [6] `"Probabilistic Matrix Factorization"
+           <http://papers.nips.cc/paper/3208-probabilistic-matrix-factorization.pdf>`_
+           Mnih, A., & Salakhutdinov, R. R., 2008
+
+    .. [7] `"Sparse Stochastic Inference for Latent Dirichlet Allocation"
+           <https://arxiv.org/ftp/arxiv/papers/1206/1206.6425.pdf>`_
+           Mimno, D., Hoffman, M., & Blei, D., 2012
+
+    .. [8] `"Stochastic Variational Inference"
+           <http://www.columbia.edu/~jwp2128/Papers/HoffmanBleiWangPaisley2013.pdf>`_
+           Hoffman, M. D., Blei, D. M., Wang, C., & Paisley, J., 2013
+
+    .. [9] `"Streaming Variational Bayes"
+           <https://papers.nips.cc/paper/4980-streaming-variational-bayes.pdf>`_
+           Broderick, T., Boyd, N., Wibisono, A., Wilson, A. C., & Jordan, M. I., 2013
+
+    .. [10] `"Supervised Topic Models"
+            <https://papers.nips.cc/paper/3328-supervised-topic-models.pdf>`_
+            Mcauliffe, J. D., & Blei, D. M., 2008
+
+
+
+
+
+
+

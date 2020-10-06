@@ -1,0 +1,23 @@
+recsys.ctr.ObiCTR
+=================
+
+.. currentmodule:: recsys.ctr
+
+.. autoclass:: ObiCTR
+   :members:  __init__, eval_avg_ll, eval_rmse, fit, partial_fit, predict_rating, set_vars,
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ObiCTR.__init__
+      ~ObiCTR.eval_avg_ll
+      ~ObiCTR.eval_rmse
+      ~ObiCTR.fit
+      ~ObiCTR.partial_fit
+      ~ObiCTR.predict_rating
+      ~ObiCTR.set_vars
+   
+   

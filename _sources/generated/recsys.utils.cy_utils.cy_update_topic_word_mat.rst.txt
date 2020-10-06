@@ -1,0 +1,6 @@
+recsys.utils.cy\_utils.cy\_update\_topic\_word\_mat
+===================================================
+
+.. currentmodule:: recsys.utils.cy_utils
+
+.. autofunction:: cy_update_topic_word_mat

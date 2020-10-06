@@ -1,0 +1,513 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1. Getting Started &#8212; obi-CTR 0.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="2. API References" href="api_ref.html" />
+    <link rel="prev" title="Welcome to obi-CTR’s documentation!" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="api_ref.html" title="2. API References"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to obi-CTR’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">obi-CTR 0.0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">1. </span>Getting Started</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="getting-started">
+<h1><span class="section-number">1. </span>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#user-guide" id="id33">User Guide</a></p>
+<ul>
+<li><p><a class="reference internal" href="#initialization" id="id34">Initialization</a></p></li>
+<li><p><a class="reference internal" href="#fitting-the-obi-ctr-model" id="id35">Fitting the obi-CTR model</a></p></li>
+<li><p><a class="reference internal" href="#evaluating-rmse-and-log-likelihood" id="id36">Evaluating RMSE and log likelihood</a></p></li>
+<li><p><a class="reference internal" href="#prediction" id="id37">Prediction</a></p></li>
+<li><p><a class="reference internal" href="#updating-parameters-streamingly" id="id38">Updating parameters streamingly</a></p></li>
+<li><p><a class="reference internal" href="#setting-all-the-latent-variables-manually" id="id39">Setting all the latent variables manually</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#the-obi-ctr-model-in-depth" id="id40">The obi-CTR Model in Depth</a></p>
+<ul>
+<li><p><a class="reference internal" href="#generative-process" id="id41">Generative process</a></p></li>
+<li><p><a class="reference internal" href="#mathematical-techniques-and-implementing-the-core-algorithm" id="id42">Mathematical techniques and implementing the core algorithm</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#mathematical-formulation" id="id43">Mathematical Formulation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#draw-topic-assignments" id="id44">Draw topic assignments</a></p></li>
+<li><p><a class="reference internal" href="#update-variational-parameters-of-topics" id="id45">Update variational parameters of topics</a></p></li>
+<li><p><a class="reference internal" href="#update-variational-parameters-of-user-latent-vector" id="id46">Update variational parameters of user latent vector</a></p></li>
+<li><p><a class="reference internal" href="#update-variational-parameters-of-item-latent-vector" id="id47">Update variational parameters of item latent vector</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#documentation-generation" id="id48">Documentation Generation</a></p></li>
+</ul>
+</div>
+<p>In this project, we implement the Online Bayesian Inference algorithm for Collaborative Topic Regression model (obi-CTR)
+<a class="footnote-reference brackets" href="#id24" id="id1">2</a>. The original CTR model <a class="footnote-reference brackets" href="#id23" id="id2">1</a> combines vanilla LDA <a class="footnote-reference brackets" href="#id26" id="id3">4</a> and PMF <a class="footnote-reference brackets" href="#id28" id="id4">6</a> for recommender systems. Although the CTR model
+has achieved good results in many fields, it is not suitable for online learning. Hence, Liu, Chenghao, et al proposed
+two models, the Online Decoupled Inference algorithm for CTR model (odi-CTR) and the obi-CTR model <a class="footnote-reference brackets" href="#id24" id="id5">2</a> for improving
+this issue. The former speeds up the fitting process by leveraging online LDA <a class="footnote-reference brackets" href="#id27" id="id6">5</a>, which uses stochastic variational
+inference <a class="footnote-reference brackets" href="#id30" id="id7">8</a> technique. Despite speeding up, it performs relatively poorly on both rating prediction and topic
+modeling task, and it still needs to define the data size in advance, which is not a fully online learning fashion.
+On the other hand, the latter jointly optimizes the combined objective function of both LDA and PMF part.
+Moreover, by leveraging streaming variational Bayes <a class="footnote-reference brackets" href="#id31" id="id8">9</a>, the obi-CTR model is fully online learning fashion.
+In addition, it uses hybrid strategy <a class="footnote-reference brackets" href="#id29" id="id9">7</a> to speed up. Among these three algorithms, the obi-CTR model consistently
+outperforms the others in most cases <a class="footnote-reference brackets" href="#id24" id="id10">2</a>.</p>
+<div class="section" id="user-guide">
+<h2><a class="toc-backref" href="#id33"><span class="section-number">1.1. </span>User Guide</a><a class="headerlink" href="#user-guide" title="Permalink to this headline">¶</a></h2>
+<p>In this section, we’ll guide you through the whole process of using the obi-CTR model, including initializing a
+<a class="reference internal" href="generated/recsys.ctr.ObiCTR.html#recsys.ctr.ObiCTR" title="recsys.ctr.ObiCTR"><code class="xref py py-class docutils literal notranslate"><span class="pre">ObiCTR</span></code></a> object, fitting the model to the data and evaluating the performance of rating prediction
+and topic modeling task.</p>
+<div class="section" id="initialization">
+<h3><a class="toc-backref" href="#id34"><span class="section-number">1.1.1. </span>Initialization</a><a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h3>
+<p>The first thing to do is import the package and then initialize a <a class="reference internal" href="generated/recsys.ctr.ObiCTR.html#recsys.ctr.ObiCTR" title="recsys.ctr.ObiCTR"><code class="xref py py-class docutils literal notranslate"><span class="pre">ObiCTR</span></code></a> object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">recsys.ctr</span> <span class="kn">import</span> <span class="n">ObiCTR</span>
+<span class="n">obj</span> <span class="o">=</span> <span class="n">ObiCTR</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">1025</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="fitting-the-obi-ctr-model">
+<h3><a class="toc-backref" href="#id35"><span class="section-number">1.1.2. </span>Fitting the obi-CTR model</a><a class="headerlink" href="#fitting-the-obi-ctr-model" title="Permalink to this headline">¶</a></h3>
+<p>For the purpose of fitting a obi-CTR model to data, we load two sparse matrices, word count matrix, shape =
+<em>(# items, vocabulary size)</em> and rating matrix, shape = <em>(# users, # items)</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sparse</span>
+<span class="n">word_cnt_mat</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;./data/word_count_mat.npz&quot;</span><span class="p">)</span>
+<span class="n">rating_mat</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;./data/rating_matrix.npz&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then we feed the two sparse matrices to the model by invoking <a class="reference internal" href="generated/recsys.ctr.ObiCTR.html#recsys.ctr.ObiCTR.fit" title="recsys.ctr.ObiCTR.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obj</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">word_cnt_mat</span><span class="o">=</span><span class="n">word_cnt_mat</span><span class="p">,</span> <span class="n">rating_mat</span><span class="o">=</span><span class="n">rating_mat</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It is worth noting that the model save all the fitted parameters automatically during the fitting process every
+<cite>evaluate_every</cite> times. Also, the model split ratings into two dataset, training data and validation data
+automatically, to evaluate the performance on validation data.</p>
+</div>
+<div class="section" id="evaluating-rmse-and-log-likelihood">
+<h3><a class="toc-backref" href="#id36"><span class="section-number">1.1.3. </span>Evaluating RMSE and log likelihood</a><a class="headerlink" href="#evaluating-rmse-and-log-likelihood" title="Permalink to this headline">¶</a></h3>
+<p>Once finished the fitted process, we can evaluate the performance of rating prediction task:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">recsys.utils.vec_utils</span> <span class="kn">import</span> <span class="n">split_rating_mat</span>
+<span class="n">train_rating_mat</span><span class="p">,</span> <span class="n">test_rating_mat</span> <span class="o">=</span> <span class="n">split_rating_mat</span><span class="p">(</span><span class="n">rating_mat</span><span class="o">=</span><span class="n">rating_mat</span><span class="p">,</span> <span class="n">train_size</span><span class="o">=</span><span class="mi">9000000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1025</span><span class="p">)</span>
+<span class="n">obj</span><span class="o">.</span><span class="n">eval_rmse</span><span class="p">(</span><span class="n">rating_mat</span><span class="o">=</span><span class="n">test_rating_mat</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can evaluate the performance of topic modeling as well:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obj</span><span class="o">.</span><span class="n">eval_avg_ll</span><span class="p">(</span><span class="n">rating_mat</span><span class="o">=</span><span class="n">test_rating_mat</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="generated/recsys.ctr.ObiCTR.html#recsys.ctr.ObiCTR.eval_rmse" title="recsys.ctr.ObiCTR.eval_rmse"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eval_rmse()</span></code></a> and <a class="reference internal" href="generated/recsys.ctr.ObiCTR.html#recsys.ctr.ObiCTR.eval_avg_ll" title="recsys.ctr.ObiCTR.eval_avg_ll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eval_avg_ll()</span></code></a> for more details.</p>
+</div>
+<div class="section" id="prediction">
+<h3><a class="toc-backref" href="#id37"><span class="section-number">1.1.4. </span>Prediction</a><a class="headerlink" href="#prediction" title="Permalink to this headline">¶</a></h3>
+<p>In obi-CTR model, rating prediction is defined as</p>
+<div class="math notranslate nohighlight">
+\[\hat{r}_{ij} \triangleq \mathbb{E}[\mathbf{u}_i^{\top}\mathbf{v}_j].\]</div>
+<p>It’s simply just the inner product of <span class="math notranslate nohighlight">\(\mathbf{m}_{ui}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{m}_{vj}\)</span>. For example, we can get
+the prediction of rating of item <code class="docutils literal notranslate"><span class="pre">5</span></code> given by user <code class="docutils literal notranslate"><span class="pre">3</span></code>  by just calling <a class="reference internal" href="generated/recsys.ctr.ObiCTR.html#recsys.ctr.ObiCTR.predict_rating" title="recsys.ctr.ObiCTR.predict_rating"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_rating()</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obj</span><span class="o">.</span><span class="n">predict_rating</span><span class="p">(</span><span class="n">user_id</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">item_id</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="updating-parameters-streamingly">
+<h3><a class="toc-backref" href="#id38"><span class="section-number">1.1.5. </span>Updating parameters streamingly</a><a class="headerlink" href="#updating-parameters-streamingly" title="Permalink to this headline">¶</a></h3>
+<p>Once finished the fitted process, we can fit the model to another mini-batch rating dataset:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obj</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">rating_mat</span><span class="o">=</span><span class="n">another_rating_mat</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="generated/recsys.ctr.ObiCTR.html#recsys.ctr.ObiCTR.partial_fit" title="recsys.ctr.ObiCTR.partial_fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">partial_fit()</span></code></a> for more details.</p>
+</div>
+<div class="section" id="setting-all-the-latent-variables-manually">
+<h3><a class="toc-backref" href="#id39"><span class="section-number">1.1.6. </span>Setting all the latent variables manually</a><a class="headerlink" href="#setting-all-the-latent-variables-manually" title="Permalink to this headline">¶</a></h3>
+<p>It’s worth mentioning that we could also set all the fitted parameters manually by just feeding the correct data into
+<a class="reference internal" href="generated/recsys.ctr.ObiCTR.html#recsys.ctr.ObiCTR.set_vars" title="recsys.ctr.ObiCTR.set_vars"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_vars()</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># preparing all the fitted parameters...</span>
+<span class="c1"># initialize a new object and set all the fitted parameters manually</span>
+<span class="n">another_obj</span> <span class="o">=</span> <span class="n">ObiCTR</span><span class="p">()</span>
+<span class="n">another_obj</span><span class="o">.</span><span class="n">set_vars</span><span class="p">(</span><span class="n">user_means</span><span class="o">=</span><span class="n">user_means</span><span class="p">,</span> <span class="n">user_covs</span><span class="o">=</span><span class="n">user_covs</span><span class="p">,</span>
+                     <span class="n">item_means</span><span class="o">=</span><span class="n">item_means</span><span class="p">,</span> <span class="n">item_covs</span><span class="o">=</span><span class="n">item_covs</span><span class="p">,</span>
+                     <span class="n">word_id_dict</span><span class="o">=</span><span class="n">word_id_dict</span><span class="p">,</span>
+                     <span class="n">topic_assignment_dict</span><span class="o">=</span><span class="n">topic_assignment_dict</span><span class="p">,</span>
+                     <span class="n">topic_word_mat</span><span class="o">=</span><span class="n">topic_word_mat</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After setting all the latent variables, <code class="docutils literal notranslate"><span class="pre">another_obj</span></code> is just like the fitted model and we could use it like we have
+mentioned before.</p>
+</div>
+</div>
+<div class="section" id="the-obi-ctr-model-in-depth">
+<h2><a class="toc-backref" href="#id40"><span class="section-number">1.2. </span>The obi-CTR Model in Depth</a><a class="headerlink" href="#the-obi-ctr-model-in-depth" title="Permalink to this headline">¶</a></h2>
+<p>In this section we introduce the obi-CTR model in detail. Specifically, we talk about the mathematical concepts behind
+the model and how to implement it. Below is the graphical visualization of this probabilistic model:</p>
+<div class="figure align-default">
+<a class="reference internal image-reference" href="_images/pgm.png"><img alt="_images/pgm.png" src="_images/pgm.png" style="width: 640.8px; height: 410.4px;" /></a>
+</div>
+<p>There are <span class="math notranslate nohighlight">\(K\)</span> topics, <span class="math notranslate nohighlight">\(I\)</span> users and <span class="math notranslate nohighlight">\(J\)</span> items, each item has <span class="math notranslate nohighlight">\(N_j\)</span> words. As you could see, the
+obi-CTR model is a high-dimensional model and the goal of it is to inference all the latent variables by just using
+relatively few observed variables. In our case, only parts of rating records and text content of each item are observed,
+while the rest are not. See the following information for a deeper understanding about each variable of this model.</p>
+<div class="topic">
+<p class="topic-title">Notations:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\text{topic proportions:}~\boldsymbol{\theta}_j \sim \text{Dirichlet}(\alpha)\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\text{topic:}~\boldsymbol{\phi}_k \sim \text{Dirichlet}(\beta)\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\text{topic assignment:}~z_{jn} \sim \text{Multinomial}(1,~\boldsymbol{\theta}_j)\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\text{word:}~w_{jn} \sim \text{Multinomial}(1,~\boldsymbol{\phi}_{z_{jn}})\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\text{item latent offset:}~\boldsymbol{\epsilon}_j \sim \text{N}(\mathbf{0},~\frac{1}{\sigma_{\epsilon}^2}\mathbf{I}_K)\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\text{item latent vector:}~\mathbf{v}_j = \boldsymbol{\epsilon}_j + \boldsymbol{\theta}_j \sim \text{N}(\boldsymbol{\theta}_j,~\frac{1}{\sigma_{\epsilon}^2}\mathbf{I}_K)\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\text{user latent vector:}~\mathbf{u}_i \sim \text{N}(\mathbf{0},~\frac{1}{\sigma_{u}^2}\mathbf{I}_K)\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\text{rating:}~r_{ij} \sim \text{N}(\mathbf{u}_i^{\top}\mathbf{v}_j,~ \frac{1}{\sigma_{r}^2}\mathbf{I}_K)\)</span></p></li>
+</ul>
+</div>
+<div class="section" id="generative-process">
+<h3><a class="toc-backref" href="#id41"><span class="section-number">1.2.1. </span>Generative process</a><a class="headerlink" href="#generative-process" title="Permalink to this headline">¶</a></h3>
+<p>The generative process of the obi-CTR model is as follows:</p>
+<ol class="arabic simple">
+<li><p>For each user <span class="math notranslate nohighlight">\(i\)</span>, draw user latent vector <span class="math notranslate nohighlight">\(\mathbf{u}_i\)</span>.</p></li>
+<li><p>For each topic <span class="math notranslate nohighlight">\(k\)</span>, draw topic <span class="math notranslate nohighlight">\(\boldsymbol{\phi}_k\)</span>.</p></li>
+<li><p>For each item <span class="math notranslate nohighlight">\(j\)</span>:</p></li>
+</ol>
+<blockquote>
+<div><ol class="loweralpha simple">
+<li><p>Draw topic proportions <span class="math notranslate nohighlight">\(\boldsymbol{\theta}_j\)</span>.</p></li>
+<li><p>Draw item latent offset <span class="math notranslate nohighlight">\(\boldsymbol{\epsilon}_j\)</span> and set item latent vector
+<span class="math notranslate nohighlight">\(\mathbf{v}_j = \boldsymbol{\epsilon}_j + \boldsymbol{\theta}_j\)</span>.</p></li>
+<li><p>For each word position <span class="math notranslate nohighlight">\(n\)</span> in item <span class="math notranslate nohighlight">\(j\)</span>:</p></li>
+</ol>
+<blockquote>
+<div><ol class="lowerroman simple">
+<li><p>Draw topic assignment <span class="math notranslate nohighlight">\(z_{jn}\)</span>.</p></li>
+<li><p>Draw word <span class="math notranslate nohighlight">\(w_{jn}\)</span>.</p></li>
+</ol>
+</div></blockquote>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>For each user-item pair <span class="math notranslate nohighlight">\((i,~j)\)</span>, draw rating <span class="math notranslate nohighlight">\(r_{ij}\)</span>.</p></li>
+</ol>
+</div>
+<div class="section" id="mathematical-techniques-and-implementing-the-core-algorithm">
+<h3><a class="toc-backref" href="#id42"><span class="section-number">1.2.2. </span>Mathematical techniques and implementing the core algorithm</a><a class="headerlink" href="#mathematical-techniques-and-implementing-the-core-algorithm" title="Permalink to this headline">¶</a></h3>
+<p>First, the obi-CTR model leverages streaming variational Bayes <a class="footnote-reference brackets" href="#id31" id="id11">9</a> to relax the assumption that the data size must be
+defined in advance. In particular, suppose the training data <span class="math notranslate nohighlight">\(\mathbb{x}_1,\mathbb{x}_2,\dots\)</span> are generated
+i.i.d. according to a distribution <span class="math notranslate nohighlight">\(p(\mathbb{x}|\Theta)\)</span> given parameters <span class="math notranslate nohighlight">\(\Theta\)</span>, and we have seen and
+processed <span class="math notranslate nohighlight">\(T-1\)</span> samples <span class="math notranslate nohighlight">\(\{\mathbb{x}_t\}_{t=1}^{T-1}\)</span>. Then Bayes theorem gives us the posterior after
+observing <span class="math notranslate nohighlight">\(T\)</span> samples</p>
+<div class="math notranslate nohighlight">
+\[p(\Theta | \mathbb{x}_1, \dots,\mathbb{x}_T) \propto p(\mathbb{x}_T|\Theta)p(\Theta | \mathbb{x}_1, \dots, \mathbb{x}_{T-1})\]</div>
+<p>That is, we treat <span class="math notranslate nohighlight">\(p(\Theta | \mathbb{x}_1, \dots, \mathbb{x}_{T-1})\)</span> as the new prior for the incoming data point
+<span class="math notranslate nohighlight">\(\mathbb{x}_T\)</span>.</p>
+<p>Moreover, there are two ways to implement approximate inference of the Bayes networks, variational inference (VI)
+(<a class="footnote-reference brackets" href="#id26" id="id12">4</a>, <a class="footnote-reference brackets" href="#id27" id="id13">5</a>, <a class="footnote-reference brackets" href="#id30" id="id14">8</a>, <a class="footnote-reference brackets" href="#id31" id="id15">9</a>) and Markov Chain Monte Carlo (MCMC) <a class="footnote-reference brackets" href="#id25" id="id16">3</a>. The obi-CTR model uses hybrid strategy <a class="footnote-reference brackets" href="#id29" id="id17">7</a> to get
+the approximate sufficient statistics of variational parameters of each “topic” dirichlet distribution and each “item
+latent vector” normal distribution. Specifically, we run gibbs sampling <span class="math notranslate nohighlight">\(S\)</span> rounds to draw new topic assignments.
+After <span class="math notranslate nohighlight">\(B\)</span> burn-in sweeps, we use rest samples to update. In addition, it allows us not to represent topic
+proportions <span class="math notranslate nohighlight">\(\boldsymbol{\theta}_j\)</span> and we can calculate <span class="math notranslate nohighlight">\(k\)</span>-th element of the topic proportions</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol{\theta}_j^{(k)}=\dfrac{\mathbf{C}_j^{(k)} + \alpha}{\sum_{k=1}^K \mathbf{C}_j^{(k)} + K \alpha}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\boldsymbol{\theta}_j^{(k)}\)</span> is <span class="math notranslate nohighlight">\(k\)</span>-th element of topic proportions <span class="math notranslate nohighlight">\(\boldsymbol{\theta}_j\)</span> and
+<span class="math notranslate nohighlight">\(\mathbf{C}_j^{(k)}\)</span> is the number of words in item <span class="math notranslate nohighlight">\(j\)</span> that are assigned to topic <span class="math notranslate nohighlight">\(k\)</span> and
+<span class="math notranslate nohighlight">\(\mathbf{C}_j=(\mathbf{C}_j^{(1)},~\dots,~\mathbf{C}_j^{(K)})^{\top}\)</span>.</p>
+<p>Furthermore, inspired by supervised topic model <a class="footnote-reference brackets" href="#id32" id="id18">10</a>, <span class="math notranslate nohighlight">\(\mathbf{v}_j\)</span> is set to
+<span class="math notranslate nohighlight">\(\boldsymbol{\epsilon}_j + \bar{\mathbf{z}}_j\)</span> where <span class="math notranslate nohighlight">\(\bar{\mathbf{z}}_j=\frac{\mathbf{C}_j}{N_j}\)</span> is
+empirical topic frequencies of item <span class="math notranslate nohighlight">\(j\)</span>, instead of the original setting, for simplifying the mathematical inference.</p>
+<p>Finally, below is the summary of the implementation of the obi-CTR model:</p>
+<ol class="arabic simple">
+<li><p>Randomly initialize</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\{(\mathbf{m}_{ui},~\Sigma_{ui})\}_{i=1}^{I}\)</span>, variational parameters of each user latent vector
+<span class="math notranslate nohighlight">\(\mathbf{u}_i\)</span>, and</p></li>
+<li><p><span class="math notranslate nohighlight">\(\{(\mathbf{m}_{vj},~\Sigma_{vj})\}_{j=1}^{J}\)</span>, variational parameters of each item latent vector
+<span class="math notranslate nohighlight">\(\mathbf{v}_{j}\)</span>, and</p></li>
+<li><p><span class="math notranslate nohighlight">\(\{\mathbf{z}_j\}_{j=1}^{J}\)</span>, topic
+assignment of each word <span class="math notranslate nohighlight">\(w_{jn}\)</span> in each item <span class="math notranslate nohighlight">\(j\)</span> where <span class="math notranslate nohighlight">\(\mathbf{z}_j = \{ z_{jn} \}_{n=1}^{N_j}\)</span>.</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Receive a new data sample:</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(r_{ij}\)</span>, rating of item <span class="math notranslate nohighlight">\(j\)</span> given by user <span class="math notranslate nohighlight">\(i\)</span>, and</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{w}_j\)</span>, text content of item <span class="math notranslate nohighlight">\(j\)</span> where <span class="math notranslate nohighlight">\(\mathbf{w}_j=\{w_{jn}\}_{n=1}^{N_j}\)</span>.</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p>For each gibbs sampling round <span class="math notranslate nohighlight">\(s\)</span>:</p></li>
+</ol>
+<blockquote>
+<div><ol class="loweralpha simple">
+<li><p>For each word <span class="math notranslate nohighlight">\(w_{jn}\)</span> in item <span class="math notranslate nohighlight">\(j\)</span>:</p></li>
+</ol>
+<blockquote>
+<div><ol class="lowerroman simple">
+<li><p>Draw new topic assignment <span class="math notranslate nohighlight">\(z_{jn}^s \sim q(z_{jn}^s | \cdots)\)</span> in round <span class="math notranslate nohighlight">\(s\)</span>.</p></li>
+<li><p>If <span class="math notranslate nohighlight">\(s&gt;B\)</span>, then collect <span class="math notranslate nohighlight">\(z_{jn}^s\)</span>.</p></li>
+</ol>
+</div></blockquote>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>For each word <span class="math notranslate nohighlight">\(w_{jn}\)</span> in item <span class="math notranslate nohighlight">\(j\)</span>, use collected samples <span class="math notranslate nohighlight">\(\{z_{jn}^s\}_{s=S-B}^S\)</span> to estimate
+<span class="math notranslate nohighlight">\(\gamma_{jn}^k\)</span>, the probability of assigning word <span class="math notranslate nohighlight">\(w_{jn}\)</span> to each topic <span class="math notranslate nohighlight">\(k\)</span>.</p></li>
+<li><p>Update <span class="math notranslate nohighlight">\(\{\Delta_k\}_{k=1}^{K}\)</span>, variational parameters  of each topic <span class="math notranslate nohighlight">\(\boldsymbol{\phi}_k\)</span>.</p></li>
+<li><p>Update</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\((\mathbf{m}_{ui},~\Sigma_{ui})\)</span>, variational parameters of user latent vector <span class="math notranslate nohighlight">\(\mathbf{u}_i\)</span>, and</p></li>
+<li><p><span class="math notranslate nohighlight">\((\mathbf{m}_{vj},~\Sigma_{vj})\)</span>, variational parameters of item latent vector <span class="math notranslate nohighlight">\(\mathbf{v}_j\)</span>.</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="7">
+<li><p>Repeat step (2), (3), (4), (5), (6).</p></li>
+</ol>
+</div>
+</div>
+<div class="section" id="mathematical-formulation">
+<h2><a class="toc-backref" href="#id43"><span class="section-number">1.3. </span>Mathematical Formulation</a><a class="headerlink" href="#mathematical-formulation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="draw-topic-assignments">
+<h3><a class="toc-backref" href="#id44"><span class="section-number">1.3.1. </span>Draw topic assignments</a><a class="headerlink" href="#draw-topic-assignments" title="Permalink to this headline">¶</a></h3>
+<p>New topic assignment can be drawn from the conditional distribution of one variable <span class="math notranslate nohighlight">\(z_{jn}\)</span> given others:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+q&amp;(z_{jn}=k | \mathbf{z}_{j \lnot n} ,~ \mathbf{v}_j ,~ \Phi ,~ w_{jn}) \\
+ &amp;\propto \underbrace{(\alpha + \mathbf{C}_{j \lnot n}^{(k)})
+                     \exp \Bigg(\Lambda_k,w_{jn}}_
+                    {\text{LDA part}} +
+                    \underbrace{\dfrac{1}{2 \sigma_{\epsilon}^2 N_j}
+                    \Big(2 \mathbf{m}_{vj}^{k} -
+                         \dfrac{1 +2 \mathbf{C}_{j \lnot n}^{(k)}}{N_j}
+                    \Big)}_
+                    {\text{PMF part}}\Bigg)
+\end{aligned}\end{split}\]</div>
+<p>See <a class="footnote-reference brackets" href="#id24" id="id19">2</a> in detail.</p>
+</div>
+<div class="section" id="update-variational-parameters-of-topics">
+<h3><a class="toc-backref" href="#id45"><span class="section-number">1.3.2. </span>Update variational parameters of topics</a><a class="headerlink" href="#update-variational-parameters-of-topics" title="Permalink to this headline">¶</a></h3>
+<p>Update variational parameters of topic <span class="math notranslate nohighlight">\(\boldsymbol{\phi}_k\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\Delta_{kw}^{\star} = \Delta_{kw}^{t} + \sum_{n=1}^{N_j}\gamma_{jn}^k \mathbb{I}[w_{jn}=w]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\gamma_{jn}^k\)</span> is the probability of assigning word <span class="math notranslate nohighlight">\(w_{jn}\)</span> to topic <span class="math notranslate nohighlight">\(k\)</span>, which is estimated
+from the samples drawn from previous gibbs sampling process.</p>
+<p>See <a class="footnote-reference brackets" href="#id24" id="id20">2</a> in detail.</p>
+</div>
+<div class="section" id="update-variational-parameters-of-user-latent-vector">
+<h3><a class="toc-backref" href="#id46"><span class="section-number">1.3.3. </span>Update variational parameters of user latent vector</a><a class="headerlink" href="#update-variational-parameters-of-user-latent-vector" title="Permalink to this headline">¶</a></h3>
+<p>Update the mean vector of user latent vector <span class="math notranslate nohighlight">\(\mathbf{u}_i\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{m}_{ui}^{*} = \mathbf{m}_{ui}^{t} +
+                      \dfrac{r_{ij} - \mathbf{m}_{vj}^{\top} \mathbf{m}_{ui}^{t}}
+                            {\sigma_r^2 + \mathbf{m}_{vj}^{\top} \Sigma_{ui}^{t} \mathbf{m}_{vj}}
+                      \Sigma_{ui}^{t}
+                      \mathbf{m}_{vj}\]</div>
+<p>Update the covariance matrix of user latent vector <span class="math notranslate nohighlight">\(\mathbf{u}_i\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\Sigma_{ui}^{*} = \Bigg( \big( \Sigma_{ui}^t \big)^{-1} +
+                         \dfrac{\mathbf{m}_{vj}\mathbf{m}_{vj}^{\top}}
+                               {\sigma_{r}^2 \mathbf{I}_{K}}
+                  \Bigg)^{-1}\]</div>
+<p>See <a class="footnote-reference brackets" href="#id24" id="id21">2</a> in detail.</p>
+</div>
+<div class="section" id="update-variational-parameters-of-item-latent-vector">
+<h3><a class="toc-backref" href="#id47"><span class="section-number">1.3.4. </span>Update variational parameters of item latent vector</a><a class="headerlink" href="#update-variational-parameters-of-item-latent-vector" title="Permalink to this headline">¶</a></h3>
+<p>Update the mean vector of item latent vector <span class="math notranslate nohighlight">\(\mathbf{v}_j\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{m}_{vj}^{*} = \underbrace{\color{red}{\Sigma_{mix} \Sigma_{vj}^{-1} \mathbf{m}_{vj}^{t}}}_
+                                 {\color{red}{\text{red}}} +
+                      \underbrace{\color{green}{\Sigma_{mix} \dfrac{1}{\sigma_{\epsilon}^2} \bar{\mathbf{z}}_j}}_
+                                 {\color{green}{\text{green}}} -
+                      \underbrace{\color{blue}{\Sigma_{mix} \dfrac{1}{\sigma_{r}^2} \mathbf{m}_{ui}}}_
+                                 {\color{blue}{\text{blue}}}
+                      \Bigg( \dfrac{\mathbf{m}_{ui}^{\top} \color{red}{\text{red}} +
+                                    \mathbf{m}_{ui}^{\top} \color{green}{\text{green}} -
+                                    r_{ij}
+                                   }{ 1 + \mathbf{m}_{ui}^{\top} \color{blue}{\text{blue}}
+                                   }
+                      \Bigg)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Sigma_{mix} = \big( \Sigma_{vj}^{-1} + \frac{1}{\sigma_{\epsilon}^2} \big)^{-1}\)</span>.</p>
+<p>Update the covariance matrix of item latent vector <span class="math notranslate nohighlight">\(\mathbf{v}_j\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\Sigma_{vj}^{*} = \Bigg( \big( \Sigma_{vj}^{t} \big)^{-1} +
+                         \dfrac{1}{\sigma_{\epsilon}^2 \mathbf{I}_{K}} +
+                         \dfrac{\mathbf{m}_{ui} \mathbf{m}_{ui}^{\top}}
+                               {\sigma_{r}^2 \mathbf{I}_{K}}
+                  \Bigg)^{-1}\]</div>
+<p>See <a class="footnote-reference brackets" href="#id24" id="id22">2</a> in detail.</p>
+</div>
+</div>
+<div class="section" id="documentation-generation">
+<h2><a class="toc-backref" href="#id48"><span class="section-number">1.4. </span>Documentation Generation</a><a class="headerlink" href="#documentation-generation" title="Permalink to this headline">¶</a></h2>
+<p>First install Sphinx, <em>a tool that makes it easy to create intelligent and beautiful documentation</em>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pip install Sphinx==3.1.2
+</pre></div>
+</div>
+<p>We have already created a Sphinx project in the <code class="docutils literal notranslate"><span class="pre">docs</span></code> directory, all you need to do is go to the directory and
+run the script:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>make html
+</pre></div>
+</div>
+<p>The rendered HTML documents are stored in the <code class="docutils literal notranslate"><span class="pre">docs/_build/html</span></code> directory.</p>
+<div class="topic">
+<p class="topic-title">References:</p>
+<dl class="footnote brackets">
+<dt class="label" id="id23"><span class="brackets"><a class="fn-backref" href="#id2">1</a></span></dt>
+<dd><p><a class="reference external" href="http://www.cs.columbia.edu/~blei/papers/WangBlei2011.pdf">“Collaborative Topic Modeling for Recommending Scientific Articles”</a>
+Wang, C., &amp; Blei, D. M., 2011</p>
+</dd>
+<dt class="label" id="id24"><span class="brackets">2</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id5">2</a>,<a href="#id10">3</a>,<a href="#id19">4</a>,<a href="#id20">5</a>,<a href="#id21">6</a>,<a href="#id22">7</a>)</span></dt>
+<dd><p><a class="reference external" href="https://link.springer.com/article/10.1007/s10994-016-5599-z">“Collaborative Topic Regression for Online Recommender Systems: an Online and Bayesian Approach.”</a>
+Liu, C., Jin, T., Hoi, S. C., Zhao, P., &amp; Sun, J., 2017</p>
+</dd>
+<dt class="label" id="id25"><span class="brackets"><a class="fn-backref" href="#id16">3</a></span></dt>
+<dd><p><a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC387300/pdf/1015228.pdf">“Finding Scientific Topics”</a>
+Griffiths, T. L., &amp; Steyvers, M, 2004</p>
+</dd>
+<dt class="label" id="id26"><span class="brackets">4</span><span class="fn-backref">(<a href="#id3">1</a>,<a href="#id12">2</a>)</span></dt>
+<dd><p><a class="reference external" href="http://www.jmlr.org/papers/volume3/blei03a/blei03a.pdf">“Latent Dirichlet Allocation”</a>
+Blei, D. M., Ng, A. Y., &amp; Jordan, M. I., 2003</p>
+</dd>
+<dt class="label" id="id27"><span class="brackets">5</span><span class="fn-backref">(<a href="#id6">1</a>,<a href="#id13">2</a>)</span></dt>
+<dd><p><a class="reference external" href="https://papers.nips.cc/paper/3902-online-learning-for-latent-dirichlet-allocation.pdf">“Online Learning for Latent Dirichlet Allocation”</a>
+Hoffman, M., Bach, F. R., &amp; Blei, D. M., 2010</p>
+</dd>
+<dt class="label" id="id28"><span class="brackets"><a class="fn-backref" href="#id4">6</a></span></dt>
+<dd><p><a class="reference external" href="http://papers.nips.cc/paper/3208-probabilistic-matrix-factorization.pdf">“Probabilistic Matrix Factorization”</a>
+Mnih, A., &amp; Salakhutdinov, R. R., 2008</p>
+</dd>
+<dt class="label" id="id29"><span class="brackets">7</span><span class="fn-backref">(<a href="#id9">1</a>,<a href="#id17">2</a>)</span></dt>
+<dd><p><a class="reference external" href="https://arxiv.org/ftp/arxiv/papers/1206/1206.6425.pdf">“Sparse Stochastic Inference for Latent Dirichlet Allocation”</a>
+Mimno, D., Hoffman, M., &amp; Blei, D., 2012</p>
+</dd>
+<dt class="label" id="id30"><span class="brackets">8</span><span class="fn-backref">(<a href="#id7">1</a>,<a href="#id14">2</a>)</span></dt>
+<dd><p><a class="reference external" href="http://www.columbia.edu/~jwp2128/Papers/HoffmanBleiWangPaisley2013.pdf">“Stochastic Variational Inference”</a>
+Hoffman, M. D., Blei, D. M., Wang, C., &amp; Paisley, J., 2013</p>
+</dd>
+<dt class="label" id="id31"><span class="brackets">9</span><span class="fn-backref">(<a href="#id8">1</a>,<a href="#id11">2</a>,<a href="#id15">3</a>)</span></dt>
+<dd><p><a class="reference external" href="https://papers.nips.cc/paper/4980-streaming-variational-bayes.pdf">“Streaming Variational Bayes”</a>
+Broderick, T., Boyd, N., Wibisono, A., Wilson, A. C., &amp; Jordan, M. I., 2013</p>
+</dd>
+<dt class="label" id="id32"><span class="brackets"><a class="fn-backref" href="#id18">10</a></span></dt>
+<dd><p><a class="reference external" href="https://papers.nips.cc/paper/3328-supervised-topic-models.pdf">“Supervised Topic Models”</a>
+Mcauliffe, J. D., &amp; Blei, D. M., 2008</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">1. Getting Started</a><ul>
+<li><a class="reference internal" href="#user-guide">1.1. User Guide</a><ul>
+<li><a class="reference internal" href="#initialization">1.1.1. Initialization</a></li>
+<li><a class="reference internal" href="#fitting-the-obi-ctr-model">1.1.2. Fitting the obi-CTR model</a></li>
+<li><a class="reference internal" href="#evaluating-rmse-and-log-likelihood">1.1.3. Evaluating RMSE and log likelihood</a></li>
+<li><a class="reference internal" href="#prediction">1.1.4. Prediction</a></li>
+<li><a class="reference internal" href="#updating-parameters-streamingly">1.1.5. Updating parameters streamingly</a></li>
+<li><a class="reference internal" href="#setting-all-the-latent-variables-manually">1.1.6. Setting all the latent variables manually</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-obi-ctr-model-in-depth">1.2. The obi-CTR Model in Depth</a><ul>
+<li><a class="reference internal" href="#generative-process">1.2.1. Generative process</a></li>
+<li><a class="reference internal" href="#mathematical-techniques-and-implementing-the-core-algorithm">1.2.2. Mathematical techniques and implementing the core algorithm</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mathematical-formulation">1.3. Mathematical Formulation</a><ul>
+<li><a class="reference internal" href="#draw-topic-assignments">1.3.1. Draw topic assignments</a></li>
+<li><a class="reference internal" href="#update-variational-parameters-of-topics">1.3.2. Update variational parameters of topics</a></li>
+<li><a class="reference internal" href="#update-variational-parameters-of-user-latent-vector">1.3.3. Update variational parameters of user latent vector</a></li>
+<li><a class="reference internal" href="#update-variational-parameters-of-item-latent-vector">1.3.4. Update variational parameters of item latent vector</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#documentation-generation">1.4. Documentation Generation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to obi-CTR’s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api_ref.html"
+                        title="next chapter"><span class="section-number">2. </span>API References</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/getting_started.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="api_ref.html" title="2. API References"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to obi-CTR’s documentation!"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">obi-CTR 0.0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">1. </span>Getting Started</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, KCL.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

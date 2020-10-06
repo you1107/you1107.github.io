@@ -1,0 +1,314 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2.1.1. recsys.ctr.ObiCTR &#8212; obi-CTR 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.2.1. recsys.utils.cy_utils.cy_calc_multinomial_pvals" href="recsys.utils.cy_utils.cy_calc_multinomial_pvals.html" />
+    <link rel="prev" title="2. API References" href="../api_ref.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="recsys.utils.cy_utils.cy_calc_multinomial_pvals.html" title="2.2.1. recsys.utils.cy_utils.cy_calc_multinomial_pvals"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../api_ref.html" title="2. API References"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">obi-CTR 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api_ref.html" accesskey="U"><span class="section-number">2. </span>API References</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2.1.1. </span>recsys.ctr.ObiCTR</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="recsys-ctr-obictr">
+<h1><span class="section-number">2.1.1. </span>recsys.ctr.ObiCTR<a class="headerlink" href="#recsys-ctr-obictr" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="recsys.ctr.ObiCTR">
+<em class="property">class </em><code class="sig-prename descclassname">recsys.ctr.</code><code class="sig-name descname">ObiCTR</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n_latent_dims</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">n_iters</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">n_samples</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">n_sweeps</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">hypa_alpha</span><span class="o">=</span><span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">hypa_beta</span><span class="o">=</span><span class="default_value">0.45</span></em>, <em class="sig-param"><span class="n">hypa_rat</span><span class="o">=</span><span class="default_value">16.0</span></em>, <em class="sig-param"><span class="n">hypa_eps</span><span class="o">=</span><span class="default_value">16.0</span></em>, <em class="sig-param"><span class="n">hypa_user</span><span class="o">=</span><span class="default_value">16.0</span></em>, <em class="sig-param"><span class="n">evaluate_every</span><span class="o">=</span><span class="default_value">25000</span></em>, <em class="sig-param"><span class="n">seed</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#recsys.ctr.ObiCTR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Online Bayesian Inference algorithm for Collaborative Topic Regression model (obi-CTR)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_latent_dims</strong> (<em>int</em>) – Number of dimensions of latent vector, which is equal to the number of topics. In <a class="footnote-reference brackets" href="#id20" id="id1">1</a>, this is
+called <span class="math notranslate nohighlight">\(K\)</span>.</p></li>
+<li><p><strong>n_iters</strong> (<em>int</em>) – Number of iterations to go through the whole rating records.</p></li>
+<li><p><strong>n_samples</strong> (<em>int</em>) – Total number of gibbs sampling rounds.</p></li>
+<li><p><strong>n_sweeps</strong> (<em>int</em>) – Number of burn-in sweeps in gibbs sampling process, should be less than <cite>n_samples</cite>.</p></li>
+<li><p><strong>hypa_alpha</strong> (<em>int or float</em>) – Prior of “topic proportions” dirichlet distribution. In <a class="footnote-reference brackets" href="#id20" id="id2">1</a>, this is called <span class="math notranslate nohighlight">\(\alpha\)</span>.</p></li>
+<li><p><strong>hypa_beta</strong> (<em>int or float</em>) – Prior of “topic” dirichlet distribution. In <a class="footnote-reference brackets" href="#id20" id="id3">1</a>, this is called <span class="math notranslate nohighlight">\(\beta\)</span>.</p></li>
+<li><p><strong>hypa_rat</strong> (<em>int or float</em>) – Prior of “rating” normal distribution. In <a class="footnote-reference brackets" href="#id20" id="id4">1</a>, this is called <span class="math notranslate nohighlight">\(\sigma_{r}^2\)</span>.</p></li>
+<li><p><strong>hypa_eps</strong> (<em>int or float</em>) – Prior of “item latent offset” normal distribution. In <a class="footnote-reference brackets" href="#id20" id="id5">1</a>, this is called <span class="math notranslate nohighlight">\(\sigma_{\epsilon}^2\)</span>.</p></li>
+<li><p><strong>hypa_user</strong> (<em>int or float</em>) – Prior of “user latent vector” normal distribution. In <a class="footnote-reference brackets" href="#id20" id="id6">1</a>, this is called <span class="math notranslate nohighlight">\(\sigma_{u}^2\)</span>.</p></li>
+<li><p><strong>evaluate_every</strong> (<em>int</em>) – Evaluate metrics (RMSE and average per-word log likelihood) every <cite>evaluate_every</cite> times.</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – Random seed for reproducible results across multiple function calls.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>n_users_</strong> (<em>int</em>) – Number of users. In <a class="footnote-reference brackets" href="#id20" id="id7">1</a>, this is called <span class="math notranslate nohighlight">\(I\)</span>.</p></li>
+<li><p><strong>user_means_</strong> (<em>ndarray, shape = (n_users_, n_latent_dims)</em>) – The collection of the mean vector of each user. In <a class="footnote-reference brackets" href="#id20" id="id8">1</a>, this is called <span class="math notranslate nohighlight">\(\{\mathbf{m}_{ui}\}_{i=1}^I\)</span>.</p></li>
+<li><p><strong>user_covs_</strong> (<em>ndarray, shape = (n_users_, n_latent_dims)</em>) – The collection of the diagonals of covariance matrix of each user. In <a class="footnote-reference brackets" href="#id20" id="id9">1</a>, this is called
+<span class="math notranslate nohighlight">\(\{\Sigma_{ui}\}_{i=1}^I\)</span>.</p></li>
+<li><p><strong>n_items_</strong> (<em>int</em>) – Number of items. In <a class="footnote-reference brackets" href="#id20" id="id10">1</a>, this is called <span class="math notranslate nohighlight">\(J\)</span>.</p></li>
+<li><p><strong>item_means_</strong> (<em>ndarray, shape = (n_items_, n_latent_dims)</em>) – The collection of the mean vector of each item. In <a class="footnote-reference brackets" href="#id20" id="id11">1</a>, this is called <span class="math notranslate nohighlight">\(\{\mathbf{m}_{vj}\}_{j=1}^J\)</span>.</p></li>
+<li><p><strong>item_covs_</strong> (<em>ndarray, shape = (n_items_, n_latent_dims)</em>) – The collection of the diagonals of covariance matrix of each item. In <a class="footnote-reference brackets" href="#id20" id="id12">1</a>, this is called
+<span class="math notranslate nohighlight">\(\{\Sigma_{vj}\}_{j=1}^J\)</span>.</p></li>
+<li><p><strong>vocab_size_</strong> (<em>int</em>) – Number of words in the vocabulary. In <a class="footnote-reference brackets" href="#id20" id="id13">1</a>, this is called <span class="math notranslate nohighlight">\(W\)</span> or <span class="math notranslate nohighlight">\(D\)</span>.</p></li>
+<li><p><strong>word_id_dict_</strong> (<em>dict of key-value pair = (item_id: word_ids)</em>) – Word id of each word in each item. In <a class="footnote-reference brackets" href="#id20" id="id14">1</a>, this is called <span class="math notranslate nohighlight">\(\mathbf{W}=\{\mathbf{w}_j\}_{j=1}^J\)</span></p></li>
+<li><p><strong>topic_assignment_dict_</strong> (<em>dict of key-value pair = (item_id: topic_assignments)</em>) – Topic assignment of each word in each item. In <a class="footnote-reference brackets" href="#id20" id="id15">1</a>, this is called <span class="math notranslate nohighlight">\(\mathbf{Z}=\{\mathbf{z}_j\}_{j=1}^J\)</span></p></li>
+<li><p><strong>item_topic_cnt_mat_</strong> (<em>ndarray, shape = (n_items_, n_latent_dims)</em>) – Number of words in each item that are assigned to topic <span class="math notranslate nohighlight">\(k\)</span>. In <a class="footnote-reference brackets" href="#id20" id="id16">1</a>, this is called
+<span class="math notranslate nohighlight">\(\{\mathbf{C}_j\}_{j=1}^J\)</span>.</p></li>
+<li><p><strong>topic_proportions_</strong> (<em>ndarray, shape = (n_items_, n_latent_dims)</em>) – The collection of the topic proportion of each item. In <a class="footnote-reference brackets" href="#id20" id="id17">1</a>, this is called
+<span class="math notranslate nohighlight">\(\Theta=\{\boldsymbol{\theta}_j\}_{j=1}^J\)</span></p></li>
+<li><p><strong>topic_word_mat_</strong> (<em>ndarray, shape = (n_latent_dims, vocab_size_)</em>) – Variational parameters of each “topic” dirichlet distribution. In <a class="footnote-reference brackets" href="#id20" id="id18">1</a>, this is called
+<span class="math notranslate nohighlight">\(\{\Delta_k\}_{k=1}^K\)</span></p></li>
+<li><p><strong>topics_</strong> (<em>ndarray, shape = (n_latent_dims, vocab_size_)</em>) – The collection of each “topic” dirichlet distribution. In <a class="footnote-reference brackets" href="#id20" id="id19">1</a>, this is called
+<span class="math notranslate nohighlight">\(\Phi=\{\boldsymbol{\phi}_{k}\}_{k=1}^K\)</span></p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id20"><span class="brackets">1</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id2">2</a>,<a href="#id3">3</a>,<a href="#id4">4</a>,<a href="#id5">5</a>,<a href="#id6">6</a>,<a href="#id7">7</a>,<a href="#id8">8</a>,<a href="#id9">9</a>,<a href="#id10">10</a>,<a href="#id11">11</a>,<a href="#id12">12</a>,<a href="#id13">13</a>,<a href="#id14">14</a>,<a href="#id15">15</a>,<a href="#id16">16</a>,<a href="#id17">17</a>,<a href="#id18">18</a>,<a href="#id19">19</a>,<a href="#id21">20</a>,<a href="#id22">21</a>,<a href="#id23">22</a>,<a href="#id24">23</a>,<a href="#id25">24</a>,<a href="#id26">25</a>,<a href="#id27">26</a>)</span></dt>
+<dd><p>“Collaborative topic regression for online recommender
+systems: an online and Bayesian approach”, Liu, Chenghao, et al., 2017</p>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#recsys.ctr.ObiCTR.__init__" title="recsys.ctr.ObiCTR.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([n_latent_dims, n_iters, …])</p></td>
+<td><p>Initialize self.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#recsys.ctr.ObiCTR.eval_avg_ll" title="recsys.ctr.ObiCTR.eval_avg_ll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eval_avg_ll</span></code></a>(rating_mat)</p></td>
+<td><p>Evaluate average per-word log likelihood.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#recsys.ctr.ObiCTR.eval_rmse" title="recsys.ctr.ObiCTR.eval_rmse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eval_rmse</span></code></a>(rating_mat)</p></td>
+<td><p>Evaluate root mean squared error.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#recsys.ctr.ObiCTR.fit" title="recsys.ctr.ObiCTR.fit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code></a>(word_cnt_mat, rating_mat)</p></td>
+<td><p>Fit the obi-CTR model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#recsys.ctr.ObiCTR.partial_fit" title="recsys.ctr.ObiCTR.partial_fit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">partial_fit</span></code></a>(rating_mat)</p></td>
+<td><p>Fit the obi-CTR model and the method can only be used after calling <code class="docutils literal notranslate"><span class="pre">set_vars</span></code> or <code class="docutils literal notranslate"><span class="pre">fit</span></code> method once.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#recsys.ctr.ObiCTR.predict_rating" title="recsys.ctr.ObiCTR.predict_rating"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_rating</span></code></a>(user_id, item_id)</p></td>
+<td><p>Predict a rating given by the user <span class="math notranslate nohighlight">\(i\)</span> to the item <span class="math notranslate nohighlight">\(j\)</span>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#recsys.ctr.ObiCTR.set_vars" title="recsys.ctr.ObiCTR.set_vars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_vars</span></code></a>(user_means, user_covs, item_means, …)</p></td>
+<td><p>Set all the latent variables in the obi-CTR model manually.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt id="recsys.ctr.ObiCTR.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n_latent_dims</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">n_iters</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">n_samples</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">n_sweeps</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">hypa_alpha</span><span class="o">=</span><span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">hypa_beta</span><span class="o">=</span><span class="default_value">0.45</span></em>, <em class="sig-param"><span class="n">hypa_rat</span><span class="o">=</span><span class="default_value">16.0</span></em>, <em class="sig-param"><span class="n">hypa_eps</span><span class="o">=</span><span class="default_value">16.0</span></em>, <em class="sig-param"><span class="n">hypa_user</span><span class="o">=</span><span class="default_value">16.0</span></em>, <em class="sig-param"><span class="n">evaluate_every</span><span class="o">=</span><span class="default_value">25000</span></em>, <em class="sig-param"><span class="n">seed</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#recsys.ctr.ObiCTR.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="recsys.ctr.ObiCTR.eval_avg_ll">
+<code class="sig-name descname">eval_avg_ll</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rating_mat</span></em><span class="sig-paren">)</span><a class="headerlink" href="#recsys.ctr.ObiCTR.eval_avg_ll" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate average per-word log likelihood.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>rating_mat</strong> (<em>sparse matrix, shape = (n_users_, n_items_)</em>) – Rating matrix.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>avg_llikelihood</strong> – Average per-word log likelihood.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="recsys.ctr.ObiCTR.eval_rmse">
+<code class="sig-name descname">eval_rmse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rating_mat</span></em><span class="sig-paren">)</span><a class="headerlink" href="#recsys.ctr.ObiCTR.eval_rmse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate root mean squared error.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>rating_mat</strong> (<em>sparse matrix, shape = (n_users_, n_items)</em>) – Rating matrix.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rmse</strong> – Root mean squared error.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="recsys.ctr.ObiCTR.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">word_cnt_mat</span></em>, <em class="sig-param"><span class="n">rating_mat</span></em><span class="sig-paren">)</span><a class="headerlink" href="#recsys.ctr.ObiCTR.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the obi-CTR model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>word_cnt_mat</strong> (<em>sparse matrix, shape = (n_items_, vocab_size_)</em>) – Word count matrix.</p></li>
+<li><p><strong>rating_mat</strong> (<em>sparse matrix, shape = (n_users_, n_items_)</em>) – Rating matrix.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>self</strong> – self</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="recsys.ctr.ObiCTR.partial_fit">
+<code class="sig-name descname">partial_fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rating_mat</span></em><span class="sig-paren">)</span><a class="headerlink" href="#recsys.ctr.ObiCTR.partial_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the obi-CTR model and the method can only be used after calling <code class="docutils literal notranslate"><span class="pre">set_vars</span></code> or <code class="docutils literal notranslate"><span class="pre">fit</span></code> method once.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>rating_mat</strong> (<em>sparse matrix, shape = (n_users_, n_items_)</em>) – Rating matrix.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>self</strong> – self</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="recsys.ctr.ObiCTR.predict_rating">
+<code class="sig-name descname">predict_rating</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">user_id</span></em>, <em class="sig-param"><span class="n">item_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#recsys.ctr.ObiCTR.predict_rating" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict a rating given by the user <span class="math notranslate nohighlight">\(i\)</span> to the item <span class="math notranslate nohighlight">\(j\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_id</strong> (<em>int</em>) – User id.</p></li>
+<li><p><strong>item_id</strong> (<em>int</em>) – Item id.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pred_r</strong> – Predicted rating.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="recsys.ctr.ObiCTR.set_vars">
+<code class="sig-name descname">set_vars</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">user_means</span></em>, <em class="sig-param"><span class="n">user_covs</span></em>, <em class="sig-param"><span class="n">item_means</span></em>, <em class="sig-param"><span class="n">item_covs</span></em>, <em class="sig-param"><span class="n">word_id_dict</span></em>, <em class="sig-param"><span class="n">topic_assignment_dict</span></em>, <em class="sig-param"><span class="n">topic_word_mat</span></em><span class="sig-paren">)</span><a class="headerlink" href="#recsys.ctr.ObiCTR.set_vars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set all the latent variables in the obi-CTR model manually.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_means</strong> (<em>ndarray, shape = (n_users_, n_latent_dims)</em>) – The collection of the mean vector of each user. In <a class="footnote-reference brackets" href="#id20" id="id21">1</a>, this is called <span class="math notranslate nohighlight">\(\{\mathbf{m}_{ui}\}_{i=1}^I\)</span>.</p></li>
+<li><p><strong>user_covs</strong> (<em>ndarray, shape = (n_users_, n_latent_dims)</em>) – The collection of the diagonals of covariance matrix of each user. In <a class="footnote-reference brackets" href="#id20" id="id22">1</a>, this is called
+<span class="math notranslate nohighlight">\(\{\Sigma_{ui}\}_{i=1}^I\)</span>.</p></li>
+<li><p><strong>item_means</strong> (<em>ndarray, shape = (n_items_, n_latent_dims)</em>) – The collection of the mean vector of each item. In <a class="footnote-reference brackets" href="#id20" id="id23">1</a>, this is called <span class="math notranslate nohighlight">\(\{\mathbf{m}_{vj}\}_{j=1}^J\)</span>.</p></li>
+<li><p><strong>item_covs</strong> (<em>ndarray, shape = (n_items_, n_latent_dims)</em>) – The collection of the diagonals of covariance matrix of each item. In <a class="footnote-reference brackets" href="#id20" id="id24">1</a>, this is called
+<span class="math notranslate nohighlight">\(\{\Sigma_{vj}\}_{j=1}^J\)</span>.</p></li>
+<li><p><strong>word_id_dict</strong> (<em>dict of key-value pair = (item_id: word_ids)</em>) – Word id of each word in each item. In <a class="footnote-reference brackets" href="#id20" id="id25">1</a>, this is called <span class="math notranslate nohighlight">\(\mathbf{W}=\{\mathbf{w}_j\}_{j=1}^J\)</span></p></li>
+<li><p><strong>topic_assignment_dict</strong> (<em>dict of key-value pair = (item_id: topic_assignments)</em>) – Topic assignment of each word in each item. In <a class="footnote-reference brackets" href="#id20" id="id26">1</a>, this is called <span class="math notranslate nohighlight">\(\mathbf{Z}=\{\mathbf{z}_j\}_{j=1}^J\)</span></p></li>
+<li><p><strong>topic_word_mat</strong> (<em>ndarray, shape = (n_latent_dims, vocab_size_)</em>) – Variational parameters of each “topic” dirichlet distribution. In <a class="footnote-reference brackets" href="#id20" id="id27">1</a>, this is called
+<span class="math notranslate nohighlight">\(\{\Delta_k\}_{k=1}^K\)</span></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>self</strong> – self</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../api_ref.html"
+                        title="previous chapter"><span class="section-number">2. </span>API References</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="recsys.utils.cy_utils.cy_calc_multinomial_pvals.html"
+                        title="next chapter"><span class="section-number">2.2.1. </span>recsys.utils.cy_utils.cy_calc_multinomial_pvals</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generated/recsys.ctr.ObiCTR.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="recsys.utils.cy_utils.cy_calc_multinomial_pvals.html" title="2.2.1. recsys.utils.cy_utils.cy_calc_multinomial_pvals"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../api_ref.html" title="2. API References"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">obi-CTR 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api_ref.html" ><span class="section-number">2. </span>API References</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2.1.1. </span>recsys.ctr.ObiCTR</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, KCL.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

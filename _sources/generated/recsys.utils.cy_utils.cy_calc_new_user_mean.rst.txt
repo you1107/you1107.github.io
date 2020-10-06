@@ -1,0 +1,6 @@
+recsys.utils.cy\_utils.cy\_calc\_new\_user\_mean
+================================================
+
+.. currentmodule:: recsys.utils.cy_utils
+
+.. autofunction:: cy_calc_new_user_mean
